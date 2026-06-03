@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+venv/
+.env
+.DS_Store
+data/
+models/
+results/
+*.h5
+*.keras
+*.pt
