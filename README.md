@@ -1,18 +1,20 @@
-# CNN Pulmão v2 — EfficientNetB0
+# Chest X-Ray Lung Disease Classifier — EfficientNetB0
 
-Classificador de raio-X de pulmão com 4 classes: **COVID**, **Lung Opacity**, **Normal**, **Viral Pneumonia**.
+CNN classifier for chest X-ray images across 4 classes: **COVID**, **Lung Opacity**, **Normal**, **Viral Pneumonia**.
 
-## Estrutura do projeto
+Built with transfer learning (EfficientNetB0 pre-trained on ImageNet) and a two-phase training strategy: frozen base first, then fine-tuning the top layers.
+
+## Project structure
 
 ```
-├── config.py        # Constantes (paths, hiperparâmetros, classes)
-├── data_loader.py   # Carregamento eficiente via flow_from_directory
-├── model.py         # Arquitetura EfficientNetB0 + função de fine-tuning
-├── train.py         # Treino em 2 fases (frozen → fine-tune)
-├── evaluate.py      # Métricas, confusion matrix, curvas de treino
-├── predict.py       # Inferência em imagem única
+├── config.py        # Paths, hyperparameters, class names
+├── data_loader.py   # Data generators via flow_from_directory
+├── model.py         # EfficientNetB0 architecture + fine-tuning helper
+├── train.py         # Two-phase training loop
+├── evaluate.py      # Metrics, confusion matrix, training curves
+├── predict.py       # Single-image inference
 ├── requirements.txt
-└── data/            # Dataset (não incluído)
+└── data/            # Dataset (not included — see below)
     ├── COVID/images/
     ├── Lung_Opacity/images/
     ├── Normal/images/
@@ -27,34 +29,42 @@ pip install -r requirements.txt
 
 ## Dataset
 
-Baixe o [COVID-19 Radiography Database](https://www.kaggle.com/datasets/tawsifurrahman/covid19-radiography-database)
-do Kaggle e coloque as pastas dentro de `data/`.
+Download the [COVID-19 Radiography Database](https://www.kaggle.com/datasets/tawsifurrahman/covid19-radiography-database) from Kaggle and place the class folders inside `data/`.
 
-## Como rodar
+## Usage
 
-### 1. Treinar o modelo
+### 1. Train
+
 ```bash
 python train.py
 ```
-Treina em 2 fases e salva o melhor modelo em `models/best_model.keras`.
 
-### 2. Avaliar
+Trains in two phases and saves the best model to `models/best_model.keras`.
+
+### 2. Evaluate
+
 ```bash
 python evaluate.py
 ```
-Gera em `results/`:
-- `classification_report.txt` — precision, recall, F1 por classe
+
+Outputs to `results/`:
+- `classification_report.txt` — precision, recall, F1 per class
 - `confusion_matrix.png`
 - `training_curves.png`
 
-### 3. Prever uma imagem
+### 3. Predict a single image
+
 ```bash
-python predict.py caminho/para/imagem.png
+python predict.py path/to/image.png
 ```
 
-## Arquitetura
+## Architecture
 
-- **Base**: EfficientNetB0 (pré-treinado em ImageNet)
-- **Head**: GlobalAveragePooling2D → Dense(256) → BatchNorm → Dropout(0.4) → Softmax(4)
-- **Fase 1**: base congelada, 5 épocas, lr=1e-4
-- **Fase 2**: últimas 20 camadas descongeladas, 10 épocas, lr=1e-5
+| Component | Detail |
+|-----------|--------|
+| Base model | EfficientNetB0 (ImageNet weights) |
+| Head | GlobalAveragePooling2D → Dense(256, ReLU) → BatchNorm → Dropout(0.4) → Softmax(4) |
+| Phase 1 | Base frozen — 5 epochs, lr=1e-4 |
+| Phase 2 | Top 20 layers unfrozen — 10 epochs, lr=1e-5 |
+| Augmentation | Rotation, shift, zoom, horizontal flip, brightness |
+| Callbacks | EarlyStopping, ReduceLROnPlateau, ModelCheckpoint |
